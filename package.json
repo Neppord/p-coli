@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "purescript": "^0.15.9",
+    "purs-tidy": "^0.9.3",
+    "spago": "^0.21.0"
+  }
+}
