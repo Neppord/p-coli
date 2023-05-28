@@ -23,11 +23,11 @@ type Movable a =
   | a
   }
 
-type Aging a = { age :: Int | a }
+type Living a = { life :: Int | a }
 type Coli =
   { pos :: { x :: Number, y :: Number }
   , dir :: { x :: Number, y :: Number }
-  , age :: Int
+  , life :: Int
   }
 
 type Food = { x :: Number, y :: Number }
@@ -47,8 +47,8 @@ random_coli :: Effect Coli
 random_coli = do
   pos <- random_pos
   dir <- random_dir
-  age <- randomInt 100 1500
-  pure { pos, dir, age }
+  life <- randomInt 100 1500
+  pure { pos, dir, life }
 
 random_pos :: Effect { x :: Number, y :: Number }
 random_pos = do
@@ -103,12 +103,12 @@ move a = a
       }
   }
 
-age :: forall a. Aging a -> Aging a
-age a = a { age = a.age - 1 }
+age :: forall a. Living a -> Living a
+age a = a { life = a.life - 1 }
 
 coli_to_food :: Coli -> Either Coli Food
 coli_to_food coli =
-  if coli.age <= 0 then Right coli.pos
+  if coli.life <= 0 then Right coli.pos
   else Left coli
 
 getCtx :: Effect (Maybe Context2D)
