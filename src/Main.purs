@@ -77,21 +77,20 @@ main = do
   foods_ref <- new init_food
   animate do
     clearRect ctx { x: 0.0, y: 0.0, width: world.x, height: world.y }
+
     colis <- read colis_ref
     foods <- read foods_ref
+
     let
-      moved_colis = colis <#> move
-      aged_colis = moved_colis <#> age
-
-      decayed_colis :: Array (Either Coli Food)
-      decayed_colis = aged_colis <#> coli_to_food
-
-      updated_colis :: Array Coli
+      decayed_colis = colis <#> move >>> age >>> coli_to_food
       updated_colis = decayed_colis <#> blush # catMaybes
+
     colis_ref # write updated_colis
     foods_ref # write (foods <> (decayed_colis <#> hush # catMaybes))
+    
     for_ updated_colis \coli -> do
       displayColi ctx coli
+    
     read_foods <- read foods_ref
     for_ read_foods \food -> do
       displayFood ctx food
