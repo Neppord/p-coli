@@ -1,5 +1,174 @@
 (() => {
+  // output/Control.Bind/foreign.js
+  var arrayBind = function(arr) {
+    return function(f) {
+      var result = [];
+      for (var i = 0, l = arr.length; i < l; i++) {
+        Array.prototype.push.apply(result, f(arr[i]));
+      }
+      return result;
+    };
+  };
+
+  // output/Control.Apply/foreign.js
+  var arrayApply = function(fs) {
+    return function(xs) {
+      var l = fs.length;
+      var k = xs.length;
+      var result = new Array(l * k);
+      var n = 0;
+      for (var i = 0; i < l; i++) {
+        var f = fs[i];
+        for (var j = 0; j < k; j++) {
+          result[n++] = f(xs[j]);
+        }
+      }
+      return result;
+    };
+  };
+
+  // output/Control.Semigroupoid/index.js
+  var semigroupoidFn = {
+    compose: function(f) {
+      return function(g) {
+        return function(x) {
+          return f(g(x));
+        };
+      };
+    }
+  };
+
+  // output/Control.Category/index.js
+  var identity = function(dict) {
+    return dict.identity;
+  };
+  var categoryFn = {
+    identity: function(x) {
+      return x;
+    },
+    Semigroupoid0: function() {
+      return semigroupoidFn;
+    }
+  };
+
+  // output/Data.Boolean/index.js
+  var otherwise = true;
+
+  // output/Data.Function/index.js
+  var flip = function(f) {
+    return function(b) {
+      return function(a) {
+        return f(a)(b);
+      };
+    };
+  };
+  var $$const = function(a) {
+    return function(v) {
+      return a;
+    };
+  };
+
+  // output/Data.Functor/foreign.js
+  var arrayMap = function(f) {
+    return function(arr) {
+      var l = arr.length;
+      var result = new Array(l);
+      for (var i = 0; i < l; i++) {
+        result[i] = f(arr[i]);
+      }
+      return result;
+    };
+  };
+
+  // output/Data.Unit/foreign.js
+  var unit = void 0;
+
+  // output/Data.Functor/index.js
+  var map = function(dict) {
+    return dict.map;
+  };
+  var mapFlipped = function(dictFunctor) {
+    var map1 = map(dictFunctor);
+    return function(fa) {
+      return function(f) {
+        return map1(f)(fa);
+      };
+    };
+  };
+  var $$void = function(dictFunctor) {
+    return map(dictFunctor)($$const(unit));
+  };
+  var functorArray = {
+    map: arrayMap
+  };
+
+  // output/Control.Apply/index.js
+  var identity2 = /* @__PURE__ */ identity(categoryFn);
+  var applyArray = {
+    apply: arrayApply,
+    Functor0: function() {
+      return functorArray;
+    }
+  };
+  var apply = function(dict) {
+    return dict.apply;
+  };
+  var applySecond = function(dictApply) {
+    var apply1 = apply(dictApply);
+    var map2 = map(dictApply.Functor0());
+    return function(a) {
+      return function(b) {
+        return apply1(map2($$const(identity2))(a))(b);
+      };
+    };
+  };
+
+  // output/Control.Applicative/index.js
+  var pure = function(dict) {
+    return dict.pure;
+  };
+  var liftA1 = function(dictApplicative) {
+    var apply2 = apply(dictApplicative.Apply0());
+    var pure1 = pure(dictApplicative);
+    return function(f) {
+      return function(a) {
+        return apply2(pure1(f))(a);
+      };
+    };
+  };
+
+  // output/Control.Bind/index.js
+  var identity3 = /* @__PURE__ */ identity(categoryFn);
+  var bindArray = {
+    bind: arrayBind,
+    Apply0: function() {
+      return applyArray;
+    }
+  };
+  var bind = function(dict) {
+    return dict.bind;
+  };
+  var join = function(dictBind) {
+    var bind1 = bind(dictBind);
+    return function(m) {
+      return bind1(m)(identity3);
+    };
+  };
+
   // output/Data.Array/foreign.js
+  var range = function(start2) {
+    return function(end) {
+      var step2 = start2 > end ? -1 : 1;
+      var result = new Array(step2 * (end - start2) + 1);
+      var i = start2, n = 0;
+      while (i !== end) {
+        result[n++] = i;
+        i += step2;
+      }
+      result[n] = i;
+      return result;
+    };
+  };
   var replicateFill = function(count) {
     return function(value12) {
       if (count < 1) {
@@ -47,6 +216,11 @@
       };
     };
   }();
+  var filter = function(f) {
+    return function(xs) {
+      return xs.filter(f);
+    };
+  };
   var sortByImpl = function() {
     function mergeFromTo(compare2, fromOrdering, xs1, xs2, from, to) {
       var mid;
@@ -96,80 +270,15 @@
       };
     };
   }();
-
-  // output/Data.Functor/foreign.js
-  var arrayMap = function(f) {
-    return function(arr) {
-      var l = arr.length;
-      var result = new Array(l);
-      for (var i = 0; i < l; i++) {
-        result[i] = f(arr[i]);
+  var any = function(p) {
+    return function(xs) {
+      var len = xs.length;
+      for (var i = 0; i < len; i++) {
+        if (p(xs[i]))
+          return true;
       }
-      return result;
+      return false;
     };
-  };
-
-  // output/Control.Semigroupoid/index.js
-  var semigroupoidFn = {
-    compose: function(f) {
-      return function(g) {
-        return function(x) {
-          return f(g(x));
-        };
-      };
-    }
-  };
-
-  // output/Control.Category/index.js
-  var identity = function(dict) {
-    return dict.identity;
-  };
-  var categoryFn = {
-    identity: function(x) {
-      return x;
-    },
-    Semigroupoid0: function() {
-      return semigroupoidFn;
-    }
-  };
-
-  // output/Data.Boolean/index.js
-  var otherwise = true;
-
-  // output/Data.Function/index.js
-  var flip = function(f) {
-    return function(b) {
-      return function(a) {
-        return f(a)(b);
-      };
-    };
-  };
-  var $$const = function(a) {
-    return function(v) {
-      return a;
-    };
-  };
-
-  // output/Data.Unit/foreign.js
-  var unit = void 0;
-
-  // output/Data.Functor/index.js
-  var map = function(dict) {
-    return dict.map;
-  };
-  var mapFlipped = function(dictFunctor) {
-    var map1 = map(dictFunctor);
-    return function(fa) {
-      return function(f) {
-        return map1(f)(fa);
-      };
-    };
-  };
-  var $$void = function(dictFunctor) {
-    return map(dictFunctor)($$const(unit));
-  };
-  var functorArray = {
-    map: arrayMap
   };
 
   // output/Data.Semigroup/foreign.js
@@ -189,80 +298,6 @@
   };
   var append = function(dict) {
     return dict.append;
-  };
-
-  // output/Control.Apply/foreign.js
-  var arrayApply = function(fs) {
-    return function(xs) {
-      var l = fs.length;
-      var k = xs.length;
-      var result = new Array(l * k);
-      var n = 0;
-      for (var i = 0; i < l; i++) {
-        var f = fs[i];
-        for (var j = 0; j < k; j++) {
-          result[n++] = f(xs[j]);
-        }
-      }
-      return result;
-    };
-  };
-
-  // output/Control.Apply/index.js
-  var identity2 = /* @__PURE__ */ identity(categoryFn);
-  var applyArray = {
-    apply: arrayApply,
-    Functor0: function() {
-      return functorArray;
-    }
-  };
-  var apply = function(dict) {
-    return dict.apply;
-  };
-  var applySecond = function(dictApply) {
-    var apply1 = apply(dictApply);
-    var map2 = map(dictApply.Functor0());
-    return function(a) {
-      return function(b) {
-        return apply1(map2($$const(identity2))(a))(b);
-      };
-    };
-  };
-
-  // output/Control.Applicative/index.js
-  var pure = function(dict) {
-    return dict.pure;
-  };
-  var liftA1 = function(dictApplicative) {
-    var apply2 = apply(dictApplicative.Apply0());
-    var pure1 = pure(dictApplicative);
-    return function(f) {
-      return function(a) {
-        return apply2(pure1(f))(a);
-      };
-    };
-  };
-
-  // output/Control.Bind/foreign.js
-  var arrayBind = function(arr) {
-    return function(f) {
-      var result = [];
-      for (var i = 0, l = arr.length; i < l; i++) {
-        Array.prototype.push.apply(result, f(arr[i]));
-      }
-      return result;
-    };
-  };
-
-  // output/Control.Bind/index.js
-  var bindArray = {
-    bind: arrayBind,
-    Apply0: function() {
-      return applyArray;
-    }
-  };
-  var bind = function(dict) {
-    return dict.bind;
   };
 
   // output/Control.Monad/index.js
@@ -364,7 +399,7 @@
   };
 
   // output/Data.Maybe/index.js
-  var identity3 = /* @__PURE__ */ identity(categoryFn);
+  var identity4 = /* @__PURE__ */ identity(categoryFn);
   var Nothing = /* @__PURE__ */ function() {
     function Nothing2() {
     }
@@ -409,7 +444,7 @@
     }
   };
   var fromMaybe = function(a) {
-    return maybe(a)(identity3);
+    return maybe(a)(identity4);
   };
   var fromJust = function() {
     return function(v) {
@@ -775,7 +810,7 @@
   }();
 
   // output/Data.Traversable/index.js
-  var identity4 = /* @__PURE__ */ identity(categoryFn);
+  var identity5 = /* @__PURE__ */ identity(categoryFn);
   var traverse = function(dict) {
     return dict.traverse;
   };
@@ -822,7 +857,7 @@
   var sequenceDefault = function(dictTraversable) {
     var traverse2 = traverse(dictTraversable);
     return function(dictApplicative) {
-      return traverse2(dictApplicative)(identity4);
+      return traverse2(dictApplicative)(identity5);
     };
   };
   var traversableArray = {
@@ -859,23 +894,6 @@
   };
   var catMaybes = /* @__PURE__ */ mapMaybe(/* @__PURE__ */ identity(categoryFn));
 
-  // output/Data.Number/foreign.js
-  var isFiniteImpl = isFinite;
-  var cos = Math.cos;
-  var floor = Math.floor;
-  var remainder = function(n) {
-    return function(m) {
-      return n % m;
-    };
-  };
-  var sin = Math.sin;
-
-  // output/Data.Number/index.js
-  var pi = 3.141592653589793;
-
-  // output/Effect.Random/foreign.js
-  var random = Math.random;
-
   // output/Data.Int/foreign.js
   var fromNumberImpl = function(just) {
     return function(nothing) {
@@ -887,6 +905,25 @@
   var toNumber = function(n) {
     return n;
   };
+
+  // output/Data.Number/foreign.js
+  var isFiniteImpl = isFinite;
+  var atan2 = function(y) {
+    return function(x) {
+      return Math.atan2(y, x);
+    };
+  };
+  var cos = Math.cos;
+  var floor = Math.floor;
+  var remainder = function(n) {
+    return function(m) {
+      return n % m;
+    };
+  };
+  var sin = Math.sin;
+
+  // output/Data.Number/index.js
+  var pi = 3.141592653589793;
 
   // output/Data.Int/index.js
   var top2 = /* @__PURE__ */ top(boundedInt);
@@ -916,6 +953,9 @@
   var floor2 = function($39) {
     return unsafeClamp(floor($39));
   };
+
+  // output/Effect.Random/foreign.js
+  var random = Math.random;
 
   // output/Effect.Random/index.js
   var randomRange = function(min5) {
@@ -1009,11 +1049,12 @@
     };
   };
   var fromJust2 = /* @__PURE__ */ fromJust();
+  var mapFlipped2 = /* @__PURE__ */ mapFlipped(functorArray);
   var sequence2 = /* @__PURE__ */ sequence(traversableMaybe)(applicativeEffect);
-  var mapFlipped2 = /* @__PURE__ */ mapFlipped(functorMaybe);
+  var mapFlipped1 = /* @__PURE__ */ mapFlipped(functorMaybe);
   var $$void2 = /* @__PURE__ */ $$void(functorEffect);
   var sequence12 = /* @__PURE__ */ sequence(traversableArray)(applicativeEffect);
-  var mapFlipped1 = /* @__PURE__ */ mapFlipped(functorArray);
+  var join2 = /* @__PURE__ */ join(bindArray);
   var append2 = /* @__PURE__ */ append(semigroupArray);
   var for_2 = /* @__PURE__ */ for_(applicativeEffect)(foldableArray);
   var world = {
@@ -1022,6 +1063,19 @@
   };
   var unsafeJust = function(a) {
     return fromJust2(a);
+  };
+  var split_dir = function(ns) {
+    return function(v) {
+      var piece = pi / toNumber(ns);
+      var dir2 = atan2(v.x)(v.y);
+      return mapFlipped2(range(0)(ns))(function(n) {
+        var add2 = piece * toNumber(n) + piece / 2;
+        return {
+          x: cos(dir2 + add2),
+          y: sin(dir2 + add2)
+        };
+      });
+    };
   };
   var random_pos = function __do() {
     var x = randomRange(0)(world.x)();
@@ -1042,31 +1096,47 @@
   var random_coli = function __do3() {
     var pos = random_pos();
     var dir2 = random_dir();
-    var age1 = randomInt(100)(1500)();
+    var life = randomInt(50)(1e3)();
     return {
       pos,
       dir: dir2,
-      age: age1
+      life,
+      energy: 0
     };
   };
   var move = function(a) {
-    var $23 = {};
-    for (var $24 in a) {
-      if ({}.hasOwnProperty.call(a, $24)) {
-        $23[$24] = a[$24];
+    var $42 = {};
+    for (var $43 in a) {
+      if ({}.hasOwnProperty.call(a, $43)) {
+        $42[$43] = a[$43];
       }
       ;
     }
     ;
-    $23.pos = {
+    $42.pos = {
       x: remainder(a.pos.x + a.dir.x + world.x)(world.x),
       y: remainder(a.pos.y + a.dir.y + world.y)(world.y)
     };
-    return $23;
+    return $42;
+  };
+  var mitosis = function(coli) {
+    var $45 = coli.energy > 10;
+    if ($45) {
+      return mapFlipped2(split_dir(10 * 2 | 0)(coli.dir))(function(dir2) {
+        return {
+          energy: coli.energy - 10 | 0,
+          dir: dir2,
+          life: coli.life + 200 | 0,
+          pos: coli.pos
+        };
+      });
+    }
+    ;
+    return [coli];
   };
   var getCtx = function __do4() {
     var canvas = getCanvasElementById("world")();
-    return sequence2(mapFlipped2(canvas)(getContext2D))();
+    return sequence2(mapFlipped1(canvas)(getContext2D))();
   };
   var fillPixel = function(ctx) {
     return function(v) {
@@ -1076,6 +1146,24 @@
         width: 1,
         height: 1
       });
+    };
+  };
+  var eat = function(foods) {
+    return function(coli) {
+      var collides = function(v) {
+        return floor(v.x) === floor(coli.pos.x) && floor(v.y) === floor(coli.pos.y);
+      };
+      var $53 = any(collides)(foods);
+      if ($53) {
+        return {
+          pos: coli.pos,
+          dir: coli.dir,
+          life: coli.life + 2 | 0,
+          energy: coli.energy + 3 | 0
+        };
+      }
+      ;
+      return coli;
     };
   };
   var displayFood = function(ctx) {
@@ -1095,12 +1183,24 @@
     };
   };
   var coli_to_food = function(coli) {
-    var $30 = coli.age <= 0;
-    if ($30) {
+    var $54 = coli.life <= 0;
+    if ($54) {
       return new Right(coli.pos);
     }
     ;
     return new Left(coli);
+  };
+  var clean_plates = function(colis) {
+    return function(foods) {
+      var collides = function(v) {
+        return any(function(colis1) {
+          return floor(colis1.pos.x) === floor(v.x) && floor(colis1.pos.y) === floor(v.y);
+        })(colis);
+      };
+      return filter(function($61) {
+        return !collides($61);
+      })(foods);
+    };
   };
   var animate = function(f) {
     return function __do6() {
@@ -1108,29 +1208,29 @@
       var $lazy_loop = $runtime_lazy2("loop", "Main", function() {
         return function __do7() {
           f();
-          return $$void2(requestAnimationFrame($lazy_loop(68))(w))();
+          return $$void2(requestAnimationFrame($lazy_loop(73))(w))();
         };
       });
-      var loop2 = $lazy_loop(66);
+      var loop2 = $lazy_loop(71);
       return loop2();
     };
   };
   var age = function(a) {
-    var $31 = {};
-    for (var $32 in a) {
-      if ({}.hasOwnProperty.call(a, $32)) {
-        $31[$32] = a[$32];
+    var $58 = {};
+    for (var $59 in a) {
+      if ({}.hasOwnProperty.call(a, $59)) {
+        $58[$59] = a[$59];
       }
       ;
     }
     ;
-    $31.age = a.age - 1 | 0;
-    return $31;
+    $58.life = a.life - 1 | 0;
+    return $58;
   };
   var main = function __do5() {
     var ctx = mapFlipped(functorEffect)(getCtx)(unsafeJust)();
-    var init_coli = sequence12(replicate(500)(random_coli))();
-    var init_food = sequence12(replicate(10)(random_food))();
+    var init_coli = sequence12(replicate(100)(random_coli))();
+    var init_food = sequence12(replicate(200)(random_food))();
     var colis_ref = $$new(init_coli)();
     var foods_ref = $$new(init_food)();
     return animate(function __do6() {
@@ -1142,12 +1242,15 @@
       })();
       var colis = read(colis_ref)();
       var foods = read(foods_ref)();
-      var moved_colis = mapFlipped1(colis)(move);
-      var aged_colis = mapFlipped1(moved_colis)(age);
-      var decayed_colis = mapFlipped1(aged_colis)(coli_to_food);
-      var updated_colis = catMaybes(mapFlipped1(decayed_colis)(blush));
+      var decayed_colis = mapFlipped2(join2(mapFlipped2(colis)(function() {
+        var $62 = eat(foods);
+        return function($63) {
+          return mitosis($62(age(move($63))));
+        };
+      }())))(coli_to_food);
+      var updated_colis = catMaybes(mapFlipped2(decayed_colis)(blush));
       write(updated_colis)(colis_ref)();
-      write(append2(foods)(catMaybes(mapFlipped1(decayed_colis)(hush))))(foods_ref)();
+      write(append2(clean_plates(updated_colis)(foods))(catMaybes(mapFlipped2(decayed_colis)(hush))))(foods_ref)();
       for_2(updated_colis)(function(coli) {
         return displayColi(ctx)(coli);
       })();
@@ -1161,3 +1264,4 @@
   // <stdin>
   main();
 })();
+//# sourceMappingURL=index.js.map
