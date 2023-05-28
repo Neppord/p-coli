@@ -2,25 +2,35 @@ module Main where
 
 import Prelude
 
-import Data.Maybe (Maybe(Just, Nothing), fromJust)
-import Data.Semiring ((+))
-import Effect (Effect)
-import Effect.Console (log)
-import Graphics.Canvas (Context2D, clearRect, fillRect, getCanvasElementById, getContext2D, setFillStyle)
-import Data.Traversable (sequence)
-import Record (disjointUnion)
-import Web.HTML.HTMLEmbedElement (height, width)
-import Effect.Timer (setInterval)
-import Effect.Ref (modify, new, read)
+import Data.Array (catMaybes, replicate)
+import Data.Either (Either(Left, Right), blush, hush)
 import Data.Foldable (for_)
+import Data.Maybe (Maybe, fromJust)
+import Data.Number (cos, floor, pi, sin, (%))
+import Data.Semiring ((+))
+import Data.Traversable (sequence)
+import Effect (Effect)
+import Effect.Random (randomInt, randomRange)
+import Effect.Ref (new, read, write)
+import Graphics.Canvas (Context2D, clearRect, fillRect, getCanvasElementById, getContext2D, setFillStyle)
 import Partial.Unsafe (unsafePartial)
 import Web.HTML (window)
-import Data.Number (cos, floor, pi, sin, (%))
-import Effect.Random (randomRange)
-import Data.Array (replicate)
 import Web.HTML.Window (requestAnimationFrame)
 
-type Movable a = { pos :: { x :: Number, y :: Number }, dir :: { x :: Number, y :: Number } | a }
+type Movable a =
+  { pos :: { x :: Number, y :: Number }
+  , dir :: { x :: Number, y :: Number }
+  | a
+  }
+
+type Aging a = { age :: Int | a }
+type Coli =
+  { pos :: { x :: Number, y :: Number }
+  , dir :: { x :: Number, y :: Number }
+  , age :: Int
+  }
+
+type Food = { x :: Number, y :: Number }
 
 world :: { x :: Number, y :: Number }
 world = { x: 100.0, y: 100.0 }
@@ -33,18 +43,19 @@ random_dir = do
   dir <- randomRange (-pi) pi
   pure { x: cos dir, y: sin dir }
 
-random_coli :: Effect (Movable ())
+random_coli :: Effect Coli
 random_coli = do
-  pos <- random_pos 
+  pos <- random_pos
   dir <- random_dir
-  pure { pos, dir}
+  age <- randomInt 100 1500
+  pure { pos, dir, age }
 
 random_pos :: Effect { x :: Number, y :: Number }
 random_pos = do
   x <- randomRange 0.0 world.x
   y <- randomRange 0.0 world.y
   pure { x, y }
-  
+
 random_food :: Effect { x :: Number, y :: Number }
 random_food = random_pos
 
@@ -62,24 +73,44 @@ main = do
   ctx <- getCtx <#> unsafeJust
   init_coli <- sequence $ replicate 500 random_coli
   init_food <- sequence $ replicate 10 random_food
-  colis <- new init_coli
-  foods <- new init_food
+  colis_ref <- new init_coli
+  foods_ref <- new init_food
   animate do
     clearRect ctx { x: 0.0, y: 0.0, width: world.x, height: world.y }
-    updated_colis <- modify (map tick) colis
+    colis <- read colis_ref
+    foods <- read foods_ref
+    let
+      moved_colis = colis <#> move
+      aged_colis = moved_colis <#> age
+
+      decayed_colis :: Array (Either Coli Food)
+      decayed_colis = aged_colis <#> coli_to_food
+
+      updated_colis :: Array Coli
+      updated_colis = decayed_colis <#> blush # catMaybes
+    colis_ref # write updated_colis
+    foods_ref # write (foods <> (decayed_colis <#> hush # catMaybes))
     for_ updated_colis \coli -> do
       displayColi ctx coli
-    read_foods <- read foods
+    read_foods <- read foods_ref
     for_ read_foods \food -> do
       displayFood ctx food
 
-tick :: forall a. Movable a -> Movable a
-tick a = a
+move :: forall a. Movable a -> Movable a
+move a = a
   { pos =
       { x: (a.pos.x + a.dir.x + world.x) % world.x
       , y: (a.pos.y + a.dir.y + world.y) % world.y
       }
   }
+
+age :: forall a. Aging a -> Aging a
+age a = a { age = a.age - 1 }
+
+coli_to_food :: Coli -> Either Coli Food
+coli_to_food coli =
+  if coli.age <= 0 then Right coli.pos
+  else Left coli
 
 getCtx :: Effect (Maybe Context2D)
 getCtx = do
@@ -92,7 +123,7 @@ fillPixel :: Context2D -> { x :: Number, y :: Number } -> Effect Unit
 fillPixel ctx { x, y } =
   fillRect ctx { x: floor x, y: floor y, width: 1.0, height: 1.0 }
 
-displayColi :: forall a. Context2D -> { pos :: { x :: Number, y :: Number } | a } -> Effect Unit
+displayColi :: Context2D -> Coli -> Effect Unit
 displayColi ctx coli = do
   setFillStyle ctx "green"
   fillPixel ctx coli.pos
